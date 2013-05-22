@@ -192,7 +192,7 @@ class Board
   def initialize
     class_array = [Rook, Knight, Bishop, Queen, King, Bishop, Knight, Rook]
     pawn_array = [Pawn] * 8
-    @chessboard = Array.new(8) {Array.new(8) {'  '}}
+    @chessboard = Array.new(8) {Array.new(8) {' '}}
 
     class_array.each_with_index do |cl, i|
       next if i == 4
@@ -229,7 +229,7 @@ class Board
           el.symbol
         end
       end
-      puts "#{8 - idx} | " + temp_row.join(' | ') + ' |'
+      puts "#{8 - idx} | " + temp_row.join('  | ') + '  |'
       puts "  +----+----+----+----+----+----+----+----+"
     end
 
@@ -244,7 +244,7 @@ class Board
   def update_board(start_pos, end_pos)
     piece = @chessboard[start_pos[0]][start_pos[1]]
     @chessboard[end_pos[0]][end_pos[1]] = piece
-    @chessboard[start_pos[0]][start_pos[1]] = "  "
+    @chessboard[start_pos[0]][start_pos[1]] = " "
   end
 
   # update_board
@@ -408,7 +408,7 @@ class Pawn < Piece
 
   def initialize(color, position)
     super(color, position)
-    @symbol = color == 'white' ? " P" : "*P"
+    @symbol = color == 'white' ? "\u2659" : "\u265F"
     @first_move = true
   end
 
@@ -441,7 +441,7 @@ class Knight < Piece
 
   def initialize(color, position)
     super(color, position)
-    @symbol = color == 'white' ? " N" : "*N"
+    @symbol = color == 'white' ? "\u2658" : "\u265E"
 
   end
 
@@ -465,7 +465,7 @@ class Rook < Piece
 
   def initialize(color,position)
     super(color, position)
-    @symbol = color == 'white' ? " R" : "*R"
+    @symbol = color == 'white' ? "\u2656" : "\u265C"
   end
 
   def possible_moves
@@ -479,7 +479,7 @@ class Queen < Piece
 
   def initialize(color,position)
     super(color, position)
-    @symbol = color == 'white' ? " Q" : "*Q"
+    @symbol = color == 'white' ? "\u2655" : "\u265B"
   end
 
   def possible_moves
@@ -493,7 +493,7 @@ class King < Piece
 
   def initialize(color,position)
     super(color, position)
-    @symbol = color == 'white' ? " K" : "*K"
+    @symbol = color == 'white' ? "\u2654" : "\u265A"
   end
 
   def possible_moves
@@ -523,7 +523,7 @@ class Bishop < Piece
 
   def initialize(color,position)
     super(color, position)
-    @symbol = color == 'white' ? " B" : "*B"
+    @symbol = color == 'white' ? "\u2657" : "\u265D"
   end
 
   def possible_moves
