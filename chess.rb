@@ -29,6 +29,17 @@ class Game
     @player2.name = name2
     @player2.color = "black"
 
+    #display board and loop for user input
+    @board.display_board
+    while true
+      begin
+        move
+      rescue RuntimeError => e
+        puts "Here is your chance to fix your boneheaded move."
+        puts "Error was: #{e.message}"
+      end
+    end
+
   end
 
   # Puts Piece Method(piece, coordinates)
@@ -62,10 +73,15 @@ class Game
 
   def move
     start_pos, end_pos = get_input
-    p "start_pos is #{start_pos}"
+    p @knight.possible_moves
     piece = @board.chessboard[start_pos[0]][start_pos[1]]
+    if piece.class == String || !piece.possible_moves?(start_pos, end_pos)
+      raise RuntimeError.new "No piece at starting position."
+      #rescue this error later in loop
+    end
     piece.position = end_pos
     @board.update_board(start_pos, end_pos)
+    @board.display_board
   end
 
   #should keep track of whose move it is
@@ -124,7 +140,9 @@ class Board
   end
 
   # update_board
-  # occupied
+  def occupied?(pos)
+    @chessboard[pos[0]][pos[1]].class.superclass == Piece
+  end
 end
 
 class HumanPlayer
@@ -165,7 +183,21 @@ class Knight < Piece
   def initialize(color, position)
     super(color, position)
     @symbol = color == 'white' ? "N" : "*N"
+
   end
+
+  def possible_moves
+    pos_moves =
+    [[-2,-1], [-2, 1], [-1, -2], [-1, 2], [1, -2], [1, 2], [2, -1], [2, 1]]
+    pos_moves.map! do |dy, dx|
+      y = dy + position[0]
+      x = dx + position[1]
+      [y, x] if (0..7).include?(y) && (0..7).include?(x)
+    end
+    pos_moves.select { |el| !el.nil?}
+  end
+
+
   #inherits Piece methods
   #valid_move? -> Knight::possible_moves
 
@@ -201,7 +233,4 @@ end
 if __FILE__ == $PROGRAM_NAME
   newgame = Game.new
   newgame.play
-  newgame.board.display_board
-  newgame.move
-  newgame.board.display_board
 end
