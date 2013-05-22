@@ -11,8 +11,14 @@ class Game
   # initialize starting positions
   def initialize
     @board = Board.new
-    @knight = Knight.new('white',[7, 1])
-    put_piece(@knight)
+    @knight1 = Knight.new('white',[7, 1])
+    @knight2 = Knight.new('white',[7, 6])
+    @knight3 = Knight.new('black',[0, 1])
+    @knight4 = Knight.new('black',[0, 6])
+    put_piece(@knight1)
+    put_piece(@knight2)
+    put_piece(@knight3)
+    put_piece(@knight4)
   end
 
   def play
@@ -73,15 +79,25 @@ class Game
 
   def move
     start_pos, end_pos = get_input
-    p @knight.possible_moves
     piece = @board.chessboard[start_pos[0]][start_pos[1]]
-    if piece.class == String || !piece.possible_moves?(start_pos, end_pos)
+    if piece.class == String
       raise RuntimeError.new "No piece at starting position."
-      #rescue this error later in loop
     end
+    unless check_possible_moves?(piece, end_pos)
+      raise RuntimeError.new "Not a possible move"
+    end
+    if @board.occupied_and_own?(piece, end_pos)
+      raise RuntimeError.new "Your piece is there."
+    end
+    #rescue this error later in loop
+    # adjust occupied for opponent pieces
     piece.position = end_pos
     @board.update_board(start_pos, end_pos)
     @board.display_board
+  end
+
+  def check_possible_moves?(piece, end_pos)
+    piece.possible_moves.include?(end_pos)
   end
 
   #should keep track of whose move it is
@@ -96,7 +112,7 @@ class Board
   attr_accessor :chessboard, :piece_at
   # initialize grid
   def initialize
-    @chessboard = Array.new(8) {Array.new(8) {' '}}
+    @chessboard = Array.new(8) {Array.new(8) {'  '}}
     # @chessboard.each_with_index do |row, idx1|
     #   row.each_with_index do |el, idx2|
     #     p "in the loop"
@@ -121,7 +137,7 @@ class Board
           el.symbol
         end
       end
-      puts "#{8 - idx} |  " + temp_row.join(' |  ') + ' |'
+      puts "#{8 - idx} | " + temp_row.join(' | ') + ' |'
       puts "  +----+----+----+----+----+----+----+----+"
     end
 
@@ -136,13 +152,16 @@ class Board
   def update_board(start_pos, end_pos)
     piece = @chessboard[start_pos[0]][start_pos[1]]
     @chessboard[end_pos[0]][end_pos[1]] = piece
-    @chessboard[start_pos[0]][start_pos[1]] = " "
+    @chessboard[start_pos[0]][start_pos[1]] = "  "
   end
 
   # update_board
-  def occupied?(pos)
-    @chessboard[pos[0]][pos[1]].class.superclass == Piece
+  def occupied_and_own?(piece, pos)
+    end_piece = @chessboard[pos[0]][pos[1]]
+    (end_piece.class.superclass == Piece) && end_piece.color == piece.color
+
   end
+
 end
 
 class HumanPlayer
@@ -182,7 +201,7 @@ class Knight < Piece
 
   def initialize(color, position)
     super(color, position)
-    @symbol = color == 'white' ? "N" : "*N"
+    @symbol = color == 'white' ? " N" : "*N"
 
   end
 
@@ -197,11 +216,8 @@ class Knight < Piece
     pos_moves.select { |el| !el.nil?}
   end
 
-
   #inherits Piece methods
   #valid_move? -> Knight::possible_moves
-
-
 end
 
 class Rook < Piece
@@ -211,6 +227,7 @@ class Rook < Piece
 end
 
 class Queen < Piece
+
   #inherits Piece methods
   #valid_move?
 
