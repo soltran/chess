@@ -25,21 +25,26 @@ class Game
     @rook4 = Rook.new('black',[0, 7])
     @queen1 = Queen.new('white',[7, 4])
     @queen2 = Queen.new('black',[0, 4])
+    @pawn1 = Pawn.new('white',[6, 0])
+    @pawn2 = Pawn.new('african-american',[1, 1])
+
 
     put_piece(@knight1)
     put_piece(@knight2)
     put_piece(@knight3)
     put_piece(@knight4)
     put_piece(@bishop1)
+    put_piece(@bishop2)
+    put_piece(@bishop3)
+    put_piece(@bishop4)
     put_piece(@rook1)
     put_piece(@rook2)
     put_piece(@rook3)
     put_piece(@rook4)
-    put_piece(@bishop2)
-    put_piece(@bishop3)
-    put_piece(@bishop4)
     put_piece(@queen1)
     put_piece(@queen2)
+    put_piece(@pawn1)
+    put_piece(@pawn2)
   end
 
   def play
@@ -111,11 +116,12 @@ class Game
       raise RuntimeError.new "Your piece is there."
     end
     if piece.blocked?(@board, end_pos)
-      raise RuntimeError.new "Pieces are in the way."
+      raise RuntimeError.new "Either pieces are in the way or there are no
+      pieces to capture for your pawn"
     end
-    #rescue this error later in loop
     # adjust occupied for opponent pieces
     piece.position = end_pos
+    piece.first_move = false if piece.class == Pawn
     @board.update_board(start_pos, end_pos)
     @board.display_board
   end
@@ -186,6 +192,11 @@ class Board
 
   end
 
+  def diag_opp_occupied?(piece, diag_pos)
+    end_piece = @chessboard[diag_pos[0]][diag_pos[1]]
+    (end_piece.class.superclass == Piece) && end_piece.color != piece.color
+  end
+
   def occupied?(pos)
     piece = @chessboard[pos[0]][pos[1]]
     piece.class.superclass == Piece
@@ -242,7 +253,6 @@ class Piece
     ortho_moves = ortho_moves.select do |y,x|
       (0..7).include?(y) && (0..7).include?(x)
     end
-    p ortho_moves
     ortho_moves
   end
 
@@ -258,7 +268,19 @@ class Piece
       ortho_blocked_spaces(end_pos)
     when Knight
       return false
+    when Pawn
+      if end_pos[1] == position[1] #going straight
+        spaces_to_check = ((color == 'white') ?
+        [[-1 + position[0], position[1]]] : [[1 + position[0], position[1]]])
+        if first_move
+          spaces_to_check << ((color == 'white') ?
+          [-2 + position[0], position[1]] : [2 + position[0], position[1]])
+        end
+      else #going diagonally
+        return !board.diag_opp_occupied?(self, end_pos)
+      end
     end
+    p spaces_to_check
     spaces_to_check.any? {|space| board.occupied?(space)}
   end
 
@@ -301,7 +323,6 @@ class Piece
     dy = end_pos[0] - position[0]
     dx = end_pos[1] - position[1]
     spaces_to_check = []
-    p "dy and dx are #{[dy, dx]}"
     dy.abs.times do |i|
       next if i == 0
       if dy < 0 && dx < 0
@@ -320,6 +341,32 @@ class Piece
 end
 
 class Pawn < Piece
+  attr_accessor :symbol, :first_move
+
+  def initialize(color, position)
+    super(color, position)
+    @symbol = color == 'white' ? " P" : "*P"
+    @first_move = true
+  end
+
+  def possible_moves
+    pos_moves =
+    [[-1, -1], [-1, 0], [-1, 1]]
+    pos_moves.map! do |dy, dx|
+      y = color == "white" ? dy + position[0] : -dy + position[0]
+      x = dx + position[1]
+      [y, x] if (0..7).include?(y) && (0..7).include?(x)
+    end
+
+
+    if @first_move
+      two_spaces_forward = (color == "white") ?
+      [-2 + position[0], position[1]] : [2 + position[0], position[1]]
+      pos_moves << two_spaces_forward
+    end
+
+    pos_moves = pos_moves.select { |el| !el.nil?}
+  end
   #inherits Piece methods
   #valid_move?
   #calls Piece::check_coord
@@ -343,7 +390,8 @@ class Knight < Piece
       x = dx + position[1]
       [y, x] if (0..7).include?(y) && (0..7).include?(x)
     end
-    pos_moves.select { |el| !el.nil?}
+
+    pos_moves = pos_moves.select { |el| !el.nil?}
   end
 
   #inherits Piece methods
