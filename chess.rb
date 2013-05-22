@@ -40,6 +40,10 @@ class Game
       @current_player = @turn % 2 == 0? @player1: @player2
       p "#{current_player.name}'s turn..."
       begin
+        if checked? && checkmate?
+          p "Checkmate! #{current_player.name} loses!"
+          break
+        end
         p "You are in check" if checked?
         move
 
@@ -100,7 +104,7 @@ class Game
 
     if checked?
       unmove(piece, end_piece, start_pos, end_pos)
-      raise RuntimeError.new "Still in check. Pick another move."
+      raise RuntimeError.new "Either still in check or moving into check."
     end
 
     @board.display_board
@@ -110,8 +114,7 @@ class Game
   def unmove(piece, end_piece, start_pos, end_pos)
     @board.chessboard[start_pos[0]][start_pos[1]] = piece
     @board.chessboard[end_pos[0]][end_pos[1]] = end_piece
-
-    @board.display_board # remove this after debug
+    piece.position = start_pos
   end
 
   def checked?
@@ -134,7 +137,44 @@ class Game
     false
   end
 
-  def check_possible_moves?(piece, end_pos)
+  def valid_moves(piece)
+    legal_moves = piece.possible_moves
+
+    legal_moves = legal_moves.select do |move|
+      !@board.occupied_and_own?(piece, move) &&
+      !piece.blocked?(@board, move)
+    end
+
+    legal_moves
+  end
+
+  def checkmate?
+    bool_array = []
+    @board.chessboard.each_with_index do |row, idx1|
+      row.each_with_index do |col, idx2|
+
+        piece = @board.chessboard[idx1][idx2]
+        next if piece.class == String || piece.color != @current_player.color
+        legal_moves = valid_moves(piece)
+
+        legal_moves.each do |move|
+          start_pos = piece.position
+          end_piece = @board.chessboard[move[0]][move[1]]
+          piece.position = move
+          @board.update_board(start_pos, move)
+
+          bool_array << checked?
+
+          unmove(piece, end_piece, start_pos, move)
+
+        end
+      end
+    end
+
+    bool_array.all?
+  end
+
+  def check_possible_moves?(piece, end_pos) #may be removed if not used
     piece.possible_moves.include?(end_pos)
   end
 
