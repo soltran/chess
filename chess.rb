@@ -3,7 +3,7 @@
 class Game
   LETTER_HASH = {}
   ("a".."h").each {|letter| LETTER_HASH[letter] = letter.ord - 97}
-  attr_accessor :player1, :player2, :board
+  attr_accessor :player1, :player2, :board, :current_player
   #creates two human players
   #gets two names
   #Assigns black or white to each
@@ -11,44 +11,10 @@ class Game
   # initialize starting positions
   def initialize
     @board = Board.new
-    @knight1 = Knight.new('white',[7, 1])
-    @knight2 = Knight.new('white',[7, 6])
-    @knight3 = Knight.new('black',[0, 1])
-    @knight4 = Knight.new('black',[0, 6])
-    @bishop1 = Bishop.new('white',[7, 2])
-    @bishop2 = Bishop.new('white',[7, 5])
-    @bishop3 = Bishop.new('black',[0, 2])
-    @bishop4 = Bishop.new('black',[0, 5])
-    @rook1 = Rook.new('white',[7, 0])
-    @rook2 = Rook.new('white',[7, 7])
-    @rook3 = Rook.new('black',[0, 0])
-    @rook4 = Rook.new('black',[0, 7])
-    @queen1 = Queen.new('white',[7, 4])
-    @queen2 = Queen.new('black',[0, 4])
-    @pawn1 = Pawn.new('white',[6, 0])
-    @pawn2 = Pawn.new('black',[1, 1])
-    @king2 = King.new('white',[7, 3])
-    @king1 = King.new('black',[0, 3])
-
-
-    put_piece(@knight1)
-    put_piece(@knight2)
-    put_piece(@knight3)
-    put_piece(@knight4)
-    put_piece(@bishop1)
-    put_piece(@bishop2)
-    put_piece(@bishop3)
-    put_piece(@bishop4)
-    put_piece(@rook1)
-    put_piece(@rook2)
-    put_piece(@rook3)
-    put_piece(@rook4)
-    put_piece(@queen1)
-    put_piece(@queen2)
-    put_piece(@pawn1)
-    put_piece(@pawn2)
-    put_piece(@king1)
-    put_piece(@king2)
+    @white_king = King.new('white',[7, 4])
+    @black_king = King.new('black',[0, 4])
+    @board.put_piece(@white_king)
+    @board.put_piece(@black_king)
   end
 
   def play
@@ -67,24 +33,23 @@ class Game
 
     #display board and loop for user input
     @board.display_board
+
+    turn = 0
     while true
+      @current_player = turn % 2 == 0? @player1: @player2
+      p "#{current_player.name}'s turn..."
       begin
+        p "You are in check" if checked?
         move
       rescue RuntimeError => e
         puts "Here is your chance to fix your boneheaded move."
         puts "Error was: #{e.message}"
       end
+
+      turn += 1
     end
 
   end
-
-  # Puts Piece Method(piece, coordinates)
-  def put_piece(piece)
-    y = piece.position.first
-    x = piece.position.last
-    @board.chessboard[y][x] = piece
-  end
-
 
   # move logic
   #convert coordinates to game
@@ -130,6 +95,26 @@ class Game
     @board.display_board
   end
 
+  def checked?
+    end_pos = @white_king.position if @current_player.color == "white"
+    end_pos = @black_king.position if @current_player.color == "black"
+
+    @board.chessboard.each_with_index do |row, idx1|
+      row.each_with_index do |col, idx2|
+        piece = @board.chessboard[idx1][idx2]
+        next if piece.class == String || piece.color == @current_player.color
+
+        if check_possible_moves?(piece, end_pos) &&
+          !piece.blocked?(@board, end_pos)
+
+          return true
+        end
+      end
+    end
+
+    false
+  end
+
   def check_possible_moves?(piece, end_pos)
     piece.possible_moves.include?(end_pos)
   end
@@ -146,17 +131,31 @@ class Board
   attr_accessor :chessboard, :piece_at
   # initialize grid
   def initialize
+    class_array = [Rook, Knight, Bishop, Queen, King, Bishop, Knight, Rook]
+    pawn_array = [Pawn] * 8
     @chessboard = Array.new(8) {Array.new(8) {'  '}}
-    # @chessboard.each_with_index do |row, idx1|
-    #   row.each_with_index do |el, idx2|
-    #     p "in the loop"
-    #     @chessboard[idx1][idx2] = idx1 + idx2
-    #   end
-    # end
+
+    class_array.each_with_index do |cl, i|
+      next if i == 4
+      new_piece = cl.new('white',[7, i])
+      put_piece(new_piece)
+      new_piece = cl.new('black',[0, i])
+      put_piece(new_piece)
+    end
+
+    pawn_array.each_with_index do |cl, i|
+      new_piece = cl.new('white',[6, i])
+      put_piece(new_piece)
+      new_piece = cl.new('black',[1, i])
+      put_piece(new_piece)
+    end
+
   end
-
-  def piece_at(coordinate)
-
+  # Puts Piece Method(piece, coordinates)
+  def put_piece(piece)
+    y = piece.position.first
+    x = piece.position.last
+    @chessboard[y][x] = piece
   end
 
   # display_board
