@@ -15,10 +15,31 @@ class Game
     @knight2 = Knight.new('white',[7, 6])
     @knight3 = Knight.new('black',[0, 1])
     @knight4 = Knight.new('black',[0, 6])
+    @bishop1 = Bishop.new('white',[7, 2])
+    @bishop2 = Bishop.new('white',[7, 5])
+    @bishop3 = Bishop.new('black',[0, 2])
+    @bishop4 = Bishop.new('black',[0, 5])
+    @rook1 = Rook.new('white',[7, 0])
+    @rook2 = Rook.new('white',[7, 7])
+    @rook3 = Rook.new('black',[0, 0])
+    @rook4 = Rook.new('black',[0, 7])
+    @queen1 = Queen.new('white',[7, 4])
+    @queen2 = Queen.new('black',[0, 4])
+
     put_piece(@knight1)
     put_piece(@knight2)
     put_piece(@knight3)
     put_piece(@knight4)
+    put_piece(@bishop1)
+    put_piece(@rook1)
+    put_piece(@rook2)
+    put_piece(@rook3)
+    put_piece(@rook4)
+    put_piece(@bishop2)
+    put_piece(@bishop3)
+    put_piece(@bishop4)
+    put_piece(@queen1)
+    put_piece(@queen2)
   end
 
   def play
@@ -84,10 +105,13 @@ class Game
       raise RuntimeError.new "No piece at starting position."
     end
     unless check_possible_moves?(piece, end_pos)
-      raise RuntimeError.new "Not a possible move"
+      raise RuntimeError.new "This is not a possible move."
     end
     if @board.occupied_and_own?(piece, end_pos)
       raise RuntimeError.new "Your piece is there."
+    end
+    if piece.blocked?(@board, end_pos)
+      raise RuntimeError.new "Pieces are in the way."
     end
     #rescue this error later in loop
     # adjust occupied for opponent pieces
@@ -162,6 +186,11 @@ class Board
 
   end
 
+  def occupied?(pos)
+    piece = @chessboard[pos[0]][pos[1]]
+    piece.class.superclass == Piece
+  end
+
 end
 
 class HumanPlayer
@@ -186,6 +215,107 @@ class Piece
   #current_position
   #move
 
+  def diagonal_moves
+    delta = [[-1, -1], [-1, 1], [1, -1], [1, 1]]
+    diag_moves = []
+    delta.each do |dy, dx|
+      7.times do |i|
+        diag_moves << [(position[0] + (dy * (i + 1))),
+        (position[1] + (dx * (i + 1)))]
+      end
+    end
+    diag_moves = diag_moves.select do |y,x|
+      (0..7).include?(y) && (0..7).include?(x)
+    end
+    diag_moves
+  end
+
+  def orthogonal_moves
+    delta = [[-1, 0], [1, 0], [0, -1], [0, 1]]
+    ortho_moves = []
+    delta.each do |dy, dx|
+      7.times do |i|
+        ortho_moves << [(position[0] + (dy * (i + 1))),
+        (position[1] + (dx * (i + 1)))]
+      end
+    end
+    ortho_moves = ortho_moves.select do |y,x|
+      (0..7).include?(y) && (0..7).include?(x)
+    end
+    p ortho_moves
+    ortho_moves
+  end
+
+  def blocked?(board, end_pos) #comes after narrowing down possible_moves
+    case self
+    when Bishop
+      spaces_to_check = diag_blocked_spaces(end_pos)
+    when Rook
+      spaces_to_check = ortho_blocked_spaces(end_pos)
+      p spaces_to_check
+    when Queen
+      spaces_to_check = diag_blocked_spaces(end_pos) +
+      ortho_blocked_spaces(end_pos)
+    when Knight
+      return false
+    end
+    spaces_to_check.any? {|space| board.occupied?(space)}
+  end
+
+  def ortho_blocked_spaces(end_pos)
+    dy = end_pos[0] - position[0]
+    dx = end_pos[1] - position[1]
+    spaces_to_check = []
+
+    if dy == 0
+      if dx < 0
+        dx.abs.times do |i|
+          next if i == 0
+          spaces_to_check << [dy, (dx.abs - i) * -1]
+        end
+      elsif dx > 0
+        dx.abs.times do |i|
+          next if i == 0
+          spaces_to_check << [dy, (dx.abs - i) * 1]
+        end
+      end
+    elsif dx == 0
+      if dy < 0
+        dy.abs.times do |i|
+          next if i == 0
+          spaces_to_check << [(dy.abs - i) * -1, dx]
+        end
+      elsif dy > 0
+        dy.abs.times do |i|
+          next if i == 0
+          spaces_to_check << [(dy.abs - i) * 1, dx]
+        end
+      end
+    end
+
+    spaces_to_check.map! {|dy, dx| [dy + position[0], dx + position[1]]}
+  end
+
+  def diag_blocked_spaces(end_pos) #helper method for blocked?
+    # generate array of spaces in the correct direction
+    dy = end_pos[0] - position[0]
+    dx = end_pos[1] - position[1]
+    spaces_to_check = []
+    p "dy and dx are #{[dy, dx]}"
+    dy.abs.times do |i|
+      next if i == 0
+      if dy < 0 && dx < 0
+        spaces_to_check << [(dy.abs - i) * -1, (dx.abs - i) * -1]
+      elsif dy < 0 && dx > 0
+        spaces_to_check << [(dy.abs - i) * -1, (dx.abs - i) * 1]
+      elsif dy > 0 && dx < 0
+        spaces_to_check << [(dy.abs - i) * 1, (dx.abs - i) * -1]
+      elsif dy > 0 && dx > 0
+        spaces_to_check << [(dy.abs - i) * 1, (dx.abs - i) * 1]
+      end
+    end
+    spaces_to_check.map! {|dy, dx| [dy + position[0], dx + position[1]]}
+  end
 
 end
 
@@ -217,19 +347,33 @@ class Knight < Piece
   end
 
   #inherits Piece methods
-  #valid_move? -> Knight::possible_moves
 end
 
 class Rook < Piece
-  #inherits Piece methods
-  #valid_move?
+  attr_accessor :symbol
+
+  def initialize(color,position)
+    super(color, position)
+    @symbol = color == 'white' ? " R" : "*R"
+  end
+
+  def possible_moves
+    orthogonal_moves
+  end
 
 end
 
 class Queen < Piece
+  attr_accessor :symbol
 
-  #inherits Piece methods
-  #valid_move?
+  def initialize(color,position)
+    super(color, position)
+    @symbol = color == 'white' ? " Q" : "*Q"
+  end
+
+  def possible_moves
+    orthogonal_moves + diagonal_moves
+  end
 
 end
 
@@ -242,6 +386,17 @@ class King < Piece
 end
 
 class Bishop < Piece
+  attr_accessor :symbol
+
+  def initialize(color,position)
+    super(color, position)
+    @symbol = color == 'white' ? " B" : "*B"
+  end
+
+  def possible_moves
+    diagonal_moves
+  end
+
   #inherits Piece methods
   #valid_move?
 
