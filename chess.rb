@@ -15,6 +15,7 @@ class Game
     @black_king = King.new('black',[0, 4])
     @board.put_piece(@white_king)
     @board.put_piece(@black_king)
+    @turn = 0
   end
 
   def play
@@ -34,19 +35,20 @@ class Game
     #display board and loop for user input
     @board.display_board
 
-    turn = 0
+
     while true
-      @current_player = turn % 2 == 0? @player1: @player2
+      @current_player = @turn % 2 == 0? @player1: @player2
       p "#{current_player.name}'s turn..."
       begin
         p "You are in check" if checked?
         move
+
       rescue RuntimeError => e
         puts "Here is your chance to fix your boneheaded move."
         puts "Error was: #{e.message}"
       end
 
-      turn += 1
+
     end
 
   end
@@ -75,6 +77,7 @@ class Game
   def move
     start_pos, end_pos = get_input
     piece = @board.chessboard[start_pos[0]][start_pos[1]]
+    end_piece = @board.chessboard[end_pos[0]][end_pos[1]]
     if piece.class == String
       raise RuntimeError.new "No piece at starting position."
     end
@@ -88,11 +91,27 @@ class Game
       raise RuntimeError.new "Either pieces are in the way or there are no
       pieces to capture for your pawn"
     end
+
     # adjust occupied for opponent pieces
     piece.position = end_pos
+
     piece.first_move = false if piece.class == Pawn
     @board.update_board(start_pos, end_pos)
+
+    if checked?
+      unmove(piece, end_piece, start_pos, end_pos)
+      raise RuntimeError.new "Still in check. Pick another move."
+    end
+
     @board.display_board
+    @turn += 1
+  end
+
+  def unmove(piece, end_piece, start_pos, end_pos)
+    @board.chessboard[start_pos[0]][start_pos[1]] = piece
+    @board.chessboard[end_pos[0]][end_pos[1]] = end_piece
+
+    @board.display_board # remove this after debug
   end
 
   def checked?
