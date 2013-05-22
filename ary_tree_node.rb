@@ -1,14 +1,15 @@
+#!/usr/bin/env ruby
+
 class TreeNode
 
   attr_accessor :parent
-  attr_reader :value, :chickens
+  attr_reader :value
 
 
   def initialize(value)
     @parent = nil
     @value = value
     @children = []
-    @chickens = true
   end
 
   def adopt_child(node)
@@ -20,7 +21,7 @@ class TreeNode
     @children
   end
 
-  def severe_child(node)
+  def sever_child(node)
     node.parent = nil
     @children.delete(node)
   end
@@ -48,5 +49,24 @@ class TreeNode
       end
     end
   end
+end
+
+if __FILE__ == $PROGRAM_NAME
+
+  while true
+
+    puts "Please pass in a value for node."
+    input = gets.chomp
+
+    begin
+      node1 = TreeNode.new(input)
+    rescue ArgumentError => e
+      puts e
+      puts "Cannot run. Please pass in one argument"
+    end
+
+  end
 
 end
+
+
