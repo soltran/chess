@@ -26,7 +26,9 @@ class Game
     @queen1 = Queen.new('white',[7, 4])
     @queen2 = Queen.new('black',[0, 4])
     @pawn1 = Pawn.new('white',[6, 0])
-    @pawn2 = Pawn.new('african-american',[1, 1])
+    @pawn2 = Pawn.new('black',[1, 1])
+    @king2 = King.new('white',[7, 3])
+    @king1 = King.new('black',[0, 3])
 
 
     put_piece(@knight1)
@@ -45,6 +47,8 @@ class Game
     put_piece(@queen2)
     put_piece(@pawn1)
     put_piece(@pawn2)
+    put_piece(@king1)
+    put_piece(@king2)
   end
 
   def play
@@ -262,7 +266,6 @@ class Piece
       spaces_to_check = diag_blocked_spaces(end_pos)
     when Rook
       spaces_to_check = ortho_blocked_spaces(end_pos)
-      p spaces_to_check
     when Queen
       spaces_to_check = diag_blocked_spaces(end_pos) +
       ortho_blocked_spaces(end_pos)
@@ -279,8 +282,10 @@ class Piece
       else #going diagonally
         return !board.diag_opp_occupied?(self, end_pos)
       end
+    when King
+      return false
     end
-    p spaces_to_check
+
     spaces_to_check.any? {|space| board.occupied?(space)}
   end
 
@@ -426,6 +431,28 @@ class Queen < Piece
 end
 
 class King < Piece
+  attr_accessor :symbol
+
+  def initialize(color,position)
+    super(color, position)
+    @symbol = color == 'white' ? " K" : "*K"
+  end
+
+  def possible_moves
+    delta =
+    [[-1, -1], [-1, 1], [1, -1], [1, 1], [-1, 0], [1, 0], [0, -1], [0, 1]]
+    pos_moves = []
+
+    delta.each do |dy, dx|
+      pos_moves << [dy + position[0], dx + position[1]]
+    end
+
+    pos_moves = pos_moves.select do |y,x|
+      (0..7).include?(y) && (0..7).include?(x)
+    end
+
+    pos_moves
+  end
   #inherits Piece methods
   #valid_move?
   #King::possible_moves
