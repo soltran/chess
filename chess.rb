@@ -1,5 +1,6 @@
 #!/usr/bin/env ruby
 require './colorize.rb'
+require 'yaml'
 
 class Game
   LETTER_HASH = {}
@@ -10,6 +11,12 @@ class Game
   #Assigns black or white to each
   #
   # initialize starting positions
+
+  def self.load
+    YAML.load_file(ARGV.shift)
+  end
+
+
   def initialize
     @board = Board.new
     @white_king = King.new('white',[7, 4])
@@ -17,6 +24,7 @@ class Game
     @board.put_piece(@white_king)
     @board.put_piece(@black_king)
     @turn = 0
+
   end
 
   def play
@@ -52,15 +60,8 @@ class Game
         puts "Here is your chance to fix your boneheaded move."
         puts "Error was: #{e.message}"
       end
-
-
     end
-
   end
-
-  # move logic
-  #convert coordinates to game
-
 
   def convert_coordinates(coord)
     start_pos, end_pos = coord.split(',')
@@ -74,9 +75,24 @@ class Game
   end
 
   def get_input
-    puts "#{@player1.name} input coordinates (e.g. \"f2,f8\") ..."
-    coord = gets.chomp
-    convert_coordinates(coord)
+    puts "#{@player1.name} input coordinates (e.g. \"f2,f8\") or s to save"
+    coord = gets.chomp.downcase
+    if coord == "s"
+      save_game
+      get_input
+    else
+      convert_coordinates(coord)
+    end
+
+  end
+
+  def save_game
+    puts "Enter filename to save at:"
+    filename = gets.chomp
+
+    File.open(filename, "w") do |f|
+      YAML.dump(self, f)
+    end
   end
 
   def move
@@ -564,6 +580,6 @@ class Bishop < Piece
 end
 
 if __FILE__ == $PROGRAM_NAME
-  newgame = Game.new
+  newgame = Game.load
   newgame.play
 end
