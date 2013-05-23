@@ -1,4 +1,5 @@
 #!/usr/bin/env ruby
+require './colorize.rb'
 
 class Game
   LETTER_HASH = {}
@@ -217,24 +218,51 @@ class Board
     @chessboard[y][x] = piece
   end
 
-  # display_board
-  def display_board
-    puts "  +----+----+----+----+----+----+----+----+"
+  # def display_board   #displays classic board
+  #   puts "  +----+----+----+----+----+----+----+----+"
+  #
+  #   @chessboard.each_with_index do |row, idx|
+  #     temp_row = row.map do |el|
+  #       if el.class == String
+  #         el
+  #       elsif el.class.superclass == Piece
+  #         el.symbol
+  #       end
+  #     end
+  #     puts "#{8 - idx} | " + temp_row.join('  | ') + '  |'
+  #     puts "  +----+----+----+----+----+----+----+----+"
+  #   end
+  #
+  #   puts "     a    b    c    d    e    f    g    h  "
+  # end
 
-    @chessboard.each_with_index do |row, idx|
-      temp_row = row.map do |el|
-        if el.class == String
-          el
-        elsif el.class.superclass == Piece
-          el.symbol
+  def display_board
+    @chessboard.each_with_index do |row, idx1|
+      print "#{8-idx1} "
+      row.each_with_index do |col, idx2|
+        tile = @chessboard[idx1][idx2]
+
+        if (idx1 + idx2) % 2 == 0
+
+          if tile.class == String
+            print (tile + " ").colorize(:background => :red)
+          else
+            print (tile.symbol + " ").colorize(:background => :red)
+          end
+
+        else
+          if tile.class == String
+            print (tile + " ").colorize(:background => :blue)
+          else
+            print (tile.symbol + " ").colorize(:background => :blue)
+          end
         end
       end
-      puts "#{8 - idx} | " + temp_row.join('  | ') + '  |'
-      puts "  +----+----+----+----+----+----+----+----+"
+      puts ""
     end
-
-    puts "     a    b    c    d    e    f    g    h  "
+    puts "  a b c d e f g h"
   end
+
 
   def move_piece(piece, end_position)
 
