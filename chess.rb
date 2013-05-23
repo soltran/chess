@@ -1,21 +1,18 @@
 #!/usr/bin/env ruby
-require './colorize.rb'
+require 'colorize'
 require 'yaml'
 
+
 class Game
+
   LETTER_HASH = {}
   ("a".."h").each {|letter| LETTER_HASH[letter] = letter.ord - 97}
+
   attr_accessor :player1, :player2, :board, :current_player
-  #creates two human players
-  #gets two names
-  #Assigns black or white to each
-  #
-  # initialize starting positions
 
   def self.load
     YAML.load_file(ARGV.shift)
   end
-
 
   def initialize
     @board = Board.new
@@ -24,7 +21,6 @@ class Game
     @board.put_piece(@white_king)
     @board.put_piece(@black_king)
     @turn = 0
-
   end
 
   def play
@@ -41,9 +37,7 @@ class Game
     @player2.name = name2
     @player2.color = "black"
 
-    #display board and loop for user input
     @board.display_board
-
 
     while true
       @current_player = @turn % 2 == 0? @player1: @player2
@@ -83,7 +77,6 @@ class Game
     else
       convert_coordinates(coord)
     end
-
   end
 
   def save_game
@@ -95,10 +88,7 @@ class Game
     end
   end
 
-  def move
-    start_pos, end_pos = get_input
-    piece = @board.chessboard[start_pos[0]][start_pos[1]]
-    end_piece = @board.chessboard[end_pos[0]][end_pos[1]]
+  def check_for_errors(piece, end_pos)
     if piece.class == String
       raise RuntimeError.new "No piece at starting position."
     end
@@ -112,8 +102,14 @@ class Game
       raise RuntimeError.new "Either pieces are in the way or there are no
       pieces to capture for your pawn"
     end
+  end
 
-    # adjust occupied for opponent pieces
+  def move
+    start_pos, end_pos = get_input
+    piece = @board.chessboard[start_pos[0]][start_pos[1]]
+    end_piece = @board.chessboard[end_pos[0]][end_pos[1]]
+
+    check_for_errors(piece, end_pos)
     piece.position = end_pos
 
     piece.first_move = false if piece.class == Pawn
@@ -183,7 +179,6 @@ class Game
           bool_array << checked?
 
           unmove(piece, end_piece, start_pos, move)
-
         end
       end
     end
@@ -191,21 +186,16 @@ class Game
     bool_array.all?
   end
 
-  def check_possible_moves?(piece, end_pos) #may be removed if not used
+  def check_possible_moves?(piece, end_pos)
     piece.possible_moves.include?(end_pos)
   end
-
-  #should keep track of whose move it is
-  #as well as the board
-  #check/mate
-  #murder piece
 
 end
 
 class Board
 
   attr_accessor :chessboard, :piece_at
-  # initialize grid
+
   def initialize
     class_array = [Rook, Knight, Bishop, Queen, King, Bishop, Knight, Rook]
     pawn_array = [Pawn] * 8
@@ -227,30 +217,12 @@ class Board
     end
 
   end
-  # Puts Piece Method(piece, coordinates)
+
   def put_piece(piece)
     y = piece.position.first
     x = piece.position.last
     @chessboard[y][x] = piece
   end
-
-  # def display_board   #displays classic board
-  #   puts "  +----+----+----+----+----+----+----+----+"
-  #
-  #   @chessboard.each_with_index do |row, idx|
-  #     temp_row = row.map do |el|
-  #       if el.class == String
-  #         el
-  #       elsif el.class.superclass == Piece
-  #         el.symbol
-  #       end
-  #     end
-  #     puts "#{8 - idx} | " + temp_row.join('  | ') + '  |'
-  #     puts "  +----+----+----+----+----+----+----+----+"
-  #   end
-  #
-  #   puts "     a    b    c    d    e    f    g    h  "
-  # end
 
   def display_board
     @chessboard.each_with_index do |row, idx1|
@@ -279,23 +251,15 @@ class Board
     puts "  a b c d e f g h"
   end
 
-
-  def move_piece(piece, end_position)
-
-
-  end
-
   def update_board(start_pos, end_pos)
     piece = @chessboard[start_pos[0]][start_pos[1]]
     @chessboard[end_pos[0]][end_pos[1]] = piece
     @chessboard[start_pos[0]][start_pos[1]] = " "
   end
 
-  # update_board
   def occupied_and_own?(piece, pos)
     end_piece = @chessboard[pos[0]][pos[1]]
     (end_piece.class.superclass == Piece) && end_piece.color == piece.color
-
   end
 
   def diag_opp_occupied?(piece, diag_pos)
@@ -312,25 +276,15 @@ end
 
 class HumanPlayer
   attr_accessor :name, :color
-  # get_user_input_from_self
-  # black or white
-
-  def initialize
-
-  end
-
 end
 
 class Piece
   attr_accessor :color, :position
+
   def initialize(color, position)
     @color = color
     @position = position
-
   end
-  #black or white piece
-  #current_position
-  #move
 
   def diagonal_moves
     delta = [[-1, -1], [-1, 1], [1, -1], [1, 1]]
@@ -344,6 +298,7 @@ class Piece
     diag_moves = diag_moves.select do |y,x|
       (0..7).include?(y) && (0..7).include?(x)
     end
+
     diag_moves
   end
 
@@ -359,6 +314,7 @@ class Piece
     ortho_moves = ortho_moves.select do |y,x|
       (0..7).include?(y) && (0..7).include?(x)
     end
+
     ortho_moves
   end
 
@@ -442,6 +398,7 @@ class Piece
         spaces_to_check << [(dy.abs - i) * 1, (dx.abs - i) * 1]
       end
     end
+
     spaces_to_check.map! {|dy, dx| [dy + position[0], dx + position[1]]}
   end
 
@@ -474,10 +431,6 @@ class Pawn < Piece
 
     pos_moves = pos_moves.select { |el| !el.nil?}
   end
-  #inherits Piece methods
-  #valid_move?
-  #calls Piece::check_coord
-
 end
 
 class Knight < Piece
@@ -501,7 +454,6 @@ class Knight < Piece
     pos_moves = pos_moves.select { |el| !el.nil?}
   end
 
-  #inherits Piece methods
 end
 
 class Rook < Piece
@@ -555,10 +507,6 @@ class King < Piece
 
     pos_moves
   end
-  #inherits Piece methods
-  #valid_move?
-  #King::possible_moves
-  #check?
 
 end
 
@@ -574,12 +522,9 @@ class Bishop < Piece
     diagonal_moves
   end
 
-  #inherits Piece methods
-  #valid_move?
-
 end
 
 if __FILE__ == $PROGRAM_NAME
-  newgame = Game.load
+  newgame = Game.new
   newgame.play
 end
